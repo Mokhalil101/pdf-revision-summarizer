@@ -20,30 +20,17 @@ div.stButton > button:first-child:hover {
     color: white;
 }
 
-/* Typography */
-h3, h4 {
-    color: #31333F;
-    font-family: 'sans serif';
+/* Dynamic Text Adjustment for Custom HTML elements */
+.dynamic-title {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 10px;
 }
-
-/* Delete (X) button */
-div.stButton > button[id^="del_"] {
-    background-color: transparent !important;
-    border: none !important;
-    color: #A0AAB2 !important;
-    font-size: 14px !important;
-    padding: 0px !important;
-    margin: 0px !important;
-    min-height: unset !important;
-    height: auto !important;
-    line-height: 1 !important;
-    box-shadow: none !important;
-}
-div.stButton > button[id^="del_"]:hover {
-    color: #E74C3C !important;
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+.dynamic-box {
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 5px solid #89CFF0;
+    background-color: rgba(137, 207, 240, 0.1);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -53,8 +40,6 @@ if "processing" not in st.session_state:
     st.session_state.processing = False
 if "summary_ready" not in st.session_state:
     st.session_state.summary_ready = False
-if "uploaded_files_list" not in st.session_state:
-    st.session_state.uploaded_files_list = []
 if "selected_length" not in st.session_state:
     st.session_state.selected_length = "Medium"
 
@@ -68,44 +53,35 @@ if not st.session_state.processing:
     with main_placeholder.container():
         st.markdown("### 📚 AI powered PDF summarizer")
 
-        # File uploader
-        uploaded_files = st.file_uploader(
+        # Bound to Session State using 'key' to preserve file on view toggle
+        uploaded_file = st.file_uploader(
             "Upload your PDF",
             type=["pdf"],
-            accept_multiple_files=True,
-            label_visibility="collapsed"
+            accept_multiple_files=False,
+            label_visibility="collapsed",
+            key="pdf_uploader"
         )
 
-        # Sync uploaded files
-        if uploaded_files:
-            for f in uploaded_files:
-                if f.name not in [existing_f.name for existing_f in st.session_state.uploaded_files_list]:
-                    st.session_state.uploaded_files_list.append(f)
+        # Progress bar and file details show ONLY when file exists in the native uploader
+        if uploaded_file is not None:
+            st.markdown("#### Uploaded File")
 
-        # Uploaded files list
-        if st.session_state.uploaded_files_list:
-            st.markdown("<h4 style='color:#89CFF0;'>Uploaded Files</h4>", unsafe_allow_html=True)
+            file_size_mb = round(len(uploaded_file.getvalue()) / (1024 * 1024), 1)
+            if file_size_mb == 0:
+                file_size_mb = 0.1
 
-            for file in st.session_state.uploaded_files_list:
-                file_size_mb = round(len(file.getvalue()) / (1024 * 1024), 1)
-                if file_size_mb == 0:
-                    file_size_mb = 10.0
-
-                st.progress(100)
-                st.markdown(
-                    f"<p style='color:gray; font-size:14px; margin-top:-10px; margin-bottom:15px;'>"
-                    f"📄 <b>{file.name}</b> ({file_size_mb} MB)"
-                    f"<span style='float:right;'>100%</span></p>",
-                    unsafe_allow_html=True
-                )
+            st.progress(100)
+            st.markdown(
+                f"<p style='color:#888888; font-size:14px; margin-top:-10px; margin-bottom:15px;'>"
+                f"📄 <b>{uploaded_file.name}</b> ({file_size_mb} MB)"
+                f"<span style='float:right;'>100%</span></p>",
+                unsafe_allow_html=True
+            )
 
         st.markdown("<br>", unsafe_allow_html=True)
 
         # Summary length title
-        st.markdown(
-            "<h4 style='text-align:center; color:#89CFF0;'>Choose Summary Length</h4>",
-            unsafe_allow_html=True
-        )
+        st.markdown("<h4 class='dynamic-title'>Choose Summary Length</h4>", unsafe_allow_html=True)
 
         # Summary length tabs
         col_s, col_m, col_l = st.columns(3)
@@ -148,7 +124,7 @@ if not st.session_state.processing:
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
             if st.button("Generate Summary", use_container_width=True):
-                if st.session_state.uploaded_files_list:
+                if st.session_state.pdf_uploader is not None:
                     st.session_state.processing = True
                     st.session_state.summary_ready = False
                     st.rerun()
@@ -173,14 +149,9 @@ else:
         st.subheader(f"{st.session_state.selected_length} Summary Output")
 
         st.markdown(f"""
-        <div style='
-        background-color:#FFFFFF;
-        padding:20px;
-        border-radius:8px;
-        border-left:5px solid #89CFF0;
-        '>
-            <p style='color:#31333F;'>• <b>Key Point 1:</b> The AI model has successfully extracted the main concept.</p>
-            <p style='color:#31333F;'>• <b>Key Point 2:</b> Important definitions and core points are formatted for revision.</p>
+        <div class='dynamic-box'>
+            <p>• <b>Key Point 1:</b> The AI model has successfully extracted the main concept.</p>
+            <p>• <b>Key Point 2:</b> Important definitions and core points are formatted for revision.</p>
         </div>
         """, unsafe_allow_html=True)
 
